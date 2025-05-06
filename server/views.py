@@ -11,7 +11,7 @@ def youtube_audio(request):
         'noplaylist': True,
         'extract_flat': False,
         'outtmpl': '-',
-        'cookiefile': './cookies.txt',  # 필요시 쿠키 사용
+        'cookiefile': '/home/ubuntu/Server/plma_python/server/cookies.txt',  # 필요시 쿠키 사용
     }
 
     def generate(audio_url):
