@@ -17,9 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from . import views
-
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('server.urls')),  # 'server.urls'로 경로 수정
+    path('', include('server.urls')),  # 'server.urls'를 포함
 ]
