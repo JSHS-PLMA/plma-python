@@ -21,5 +21,5 @@ echo "✅ static 파일 수집 완료"
 
 # 6. 서버 재시작 (예: gunicorn, daphne, etc.)
 # pm2 사용 시:
-pm2 restart my-django-app
+pm2 restart plma_python
 echo "✅ PM2 재시작 완료"
