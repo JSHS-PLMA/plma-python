@@ -1,5 +1,5 @@
 from django.http import StreamingHttpResponse
-import yt_dlp
+from yt_dlp import YoutubeDL
 import requests
 
 def youtube_audio(request):
@@ -14,7 +14,7 @@ def youtube_audio(request):
     }
 
     def generate():
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             audio_url = info['url']
             with requests.get(audio_url, stream=True) as r:
