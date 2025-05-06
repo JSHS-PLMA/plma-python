@@ -3,7 +3,7 @@ import yt_dlp
 import requests
 
 def youtube_audio(request):
-    url = 'https://www.youtube.com/watch?v=TeccAtqd5K8'  # 예시 YouTube 링크
+    url = 'https://www.youtube.com/watch?v=TeccAtqd5K8'  # Example video
 
     ydl_opts = {
         'format': 'bestaudio/best',
