@@ -1,0 +1,34 @@
+name: Deploy Ubuntu Server Project
+
+on:
+  push:
+    branches:
+      - main  # Change to your main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+
+        
+      - name: Add SSH private key to agent
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}  # Ensure this secret contains the new private key
+
+      - name: Deploy to Server
+        env:
+          SERVER_USER: ${{ secrets.SSH_USER }}
+          SERVER_IP: ${{ secrets.SSH_HOST }}
+          APP_DIR: ${{ secrets.WORK_DIR }}
+        run: 
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -p 9988 $SERVER_USER@$SERVER_IP  "
+          cd $APP_DIR;
+          chmod +x build.sh;
+          ./build.sh;
+          
+          "
