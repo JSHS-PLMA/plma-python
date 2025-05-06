@@ -4,7 +4,8 @@
 source /home/ubuntu/venv/bin/activate  # 가상환경 경로
 
 # 2. 코드 pull
-git pull
+git remote set-url origin https://github.com/JSHS-PLMA/plma-python.git
+git pull origin main
 echo "✅ Git pull 완료"
 
 # 3. 패키지 설치
