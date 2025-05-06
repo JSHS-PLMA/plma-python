@@ -3,7 +3,7 @@ from yt_dlp import YoutubeDL
 import requests
 
 def youtube_audio(request):
-    url = 'https://www.youtube.com/watch?v=TeccAtqd5K8'  # Example video
+    url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'  # Example video
 
     ydl_opts = {
         'format': 'bestaudio/best',
