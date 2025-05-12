@@ -23,7 +23,7 @@ def youtube_audio(request):
     url = f'https://www.youtube.com/watch?v={video_id}'
 
     ydl_opts = {
-        'format': 'bestaudio/best',
+        'format': 'bestaudio[ext=m4a]/bestaudio',
         'quiet': True,
         'noplaylist': True,
         'extract_flat': False,
