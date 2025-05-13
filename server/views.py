@@ -60,5 +60,5 @@ def youtube_audio(request):
         }, status=200)
 
     except Exception as e:
-        return JsonResponse({"error": "음성 추출 중 오류가 발생했습니다."}, status=500)
+        return JsonResponse({"error": e}, status=500)
 
