@@ -33,7 +33,7 @@ def download_audio(video_url):
         print(f"Downloaded audio file: {output_filename}")
 
         # S3에 업로드
-        upload_to_s3(output_filename)
+        return upload_to_s3(output_filename)
 
     except subprocess.CalledProcessError as e:
         print(f"Error running yt-dlp: {e.stderr}")
