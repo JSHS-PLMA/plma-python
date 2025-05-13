@@ -32,7 +32,7 @@ def youtube_audio(request, isMain = False):
         buffer.seek(0)
 
         # Create S3 file name
-        s3_key = f"songs/{yt.title}.mp4"  # or .webm depending on stream
+        s3_key = f"songs/{yt.title}.mp3"  # or .webm depending on stream
 
         # Upload to S3
         s3_client.upload_fileobj(
