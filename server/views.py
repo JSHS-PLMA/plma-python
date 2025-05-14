@@ -1,59 +1,42 @@
-from pytube import YouTube
-import boto3
 import os
-import io
-from django.http import JsonResponse, HttpResponseServerError
+import yt_dlp
+from django.http import HttpResponse
+from django.conf import settings
 
-# AWS credentials from environment
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME')
-
-s3_client = boto3.client('s3',
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_S3_REGION_NAME
-)
-
-def youtube_audio(request, isMain = False):
-    video_id = request if isMain else request.GET.get("videoId", "")
-    print(video_id)
+def youtube_audio(request):
+    video_id = request.GET.get('videoId')
     if not video_id:
-        return HttpResponseServerError("No video ID provided.")
+        return HttpResponse("videoId 파라미터가 필요합니다.", status=400)
+        
+    print("MEDIA_ROOT:", settings.MEDIA_ROOT)
+    print("다운로드 경로:", os.path.join(settings.MEDIA_ROOT, f"{video_id}.%(ext)s"))
+
+    filename = f"{video_id}.mp3"  # ✅ 확장자 포함!
+    download_path = os.path.join(settings.MEDIA_ROOT, filename)
+
+    # media 폴더 없으면 생성
+    if not os.path.exists(settings.MEDIA_ROOT):
+        os.makedirs(settings.MEDIA_ROOT)
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': os.path.join(settings.MEDIA_ROOT, f"{video_id}.%(ext)s"),  # ✅ 확장자 자동 대체
+        'ffmpeg_location': '/usr/bin/ffmpeg',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+    }
 
     try:
-        yt = YouTube(f"https://www.youtube.com/watch?v={video_id}")
-        audio_stream = yt.streams.filter(only_audio=True).first()
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([f'https://www.youtube.com/watch?v={video_id}'])
 
-        # Download to memory
-        buffer = io.BytesIO()
-        audio_stream.stream_to_buffer(buffer)
-        buffer.seek(0)
-
-        # Create S3 file name
-        s3_key = f"songs/{yt.title}.mp3"  # or .webm depending on stream
-
-        # Upload to S3
-        s3_client.upload_fileobj(
-            buffer,
-            Bucket=AWS_STORAGE_BUCKET_NAME,
-            Key=s3_key,
-            ExtraArgs={"ACL": "public-read"}
-        )
-
-        s3_link = f"https://s3-{AWS_S3_REGION_NAME}.amazonaws.com/{AWS_STORAGE_BUCKET_NAME}/{s3_key}"
-        return JsonResponse({"link": s3_link})
+        with open(download_path, 'rb') as f:
+            response = HttpResponse(f.read(), content_type='audio/mpeg')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
 
     except Exception as e:
-        print("Error:", str(e))
-        return HttpResponseServerError(str(e))
-
-def main():
-    video_id = "APbt9_S003Y"
-
-    youtube_audio(video_id, True)
-
-
-if __name__ == "__main__":
-    main()
+        return HttpResponse(f"다운로드 실패: {str(e)}", status=500)
