@@ -11,6 +11,9 @@ def youtube_audio(request):
     filename = f"{video_id}.mp3"
     download_path = os.path.join(settings.MEDIA_ROOT, filename)
 
+    
+    print("✅ 쿠키 경로 확인:", os.path.isfile('./cookies.txt'))
+
     if not os.path.exists(settings.MEDIA_ROOT):
         os.makedirs(settings.MEDIA_ROOT)
 
