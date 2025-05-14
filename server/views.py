@@ -1,43 +1,44 @@
 import os
-import yt_dlp
-from django.http import HttpResponse
+import subprocess
+from django.http import HttpResponse, FileResponse
 from django.conf import settings
 
 def youtube_audio(request):
     video_id = request.GET.get('videoId')
     if not video_id:
         return HttpResponse("videoId 파라미터가 필요합니다.", status=400)
-        
-    print("MEDIA_ROOT:", settings.MEDIA_ROOT)
-    print("다운로드 경로:", os.path.join(settings.MEDIA_ROOT, f"{video_id}.%(ext)s"))
 
     filename = f"{video_id}.mp3"
     download_path = os.path.join(settings.MEDIA_ROOT, filename)
 
+    # media 폴더 없으면 생성
     if not os.path.exists(settings.MEDIA_ROOT):
         os.makedirs(settings.MEDIA_ROOT)
 
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': os.path.join(settings.MEDIA_ROOT, f"{video_id}.%(ext)s"),
-        'ffmpeg_location': '/usr/bin/ffmpeg',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'cookiefile': '/home/ubuntu/cookies.txt',
-        'verbose': True,  # verbose 모드 활성화
-    }
+    # yt-dlp 명령어 구성
+    cmd = [
+        'yt-dlp',
+        '--cookies', './cookies.txt',
+        '-f', 'bestaudio',
+        '--extract-audio',
+        '--audio-format', 'mp3',
+        '--audio-quality', '192K',
+        '-o', os.path.join(settings.MEDIA_ROOT, f'{video_id}.%(ext)s'),
+        f'https://www.youtube.com/watch?v={video_id}'
+    ]
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([f'https://www.youtube.com/watch?v={video_id}'])
+        # yt-dlp 실행
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-        with open(download_path, 'rb') as f:
-            response = HttpResponse(f.read(), content_type='audio/mpeg')
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
-            return response
+        if result.returncode != 0:
+            return HttpResponse(f"다운로드 실패: {result.stderr}", status=500)
+
+        # 파일 응답
+        if os.path.exists(download_path):
+            return FileResponse(open(download_path, 'rb'), content_type='audio/mpeg', filename=filename)
+        else:
+            return HttpResponse("다운로드 파일을 찾을 수 없습니다.", status=500)
 
     except Exception as e:
-        return HttpResponse(f"다운로드 실패: {str(e)}", status=500)
+        return HttpResponse(f"예외 발생: {str(e)}", status=500)
