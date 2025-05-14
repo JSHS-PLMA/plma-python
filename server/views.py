@@ -12,13 +12,15 @@ def youtube_audio(request):
     download_path = os.path.join(settings.MEDIA_ROOT, filename)
 
     # media 폴더 없으면 생성
-    if not os.path.exists(settings.MEDIA_ROOT):
-        os.makedirs(settings.MEDIA_ROOT)
+    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+
+    # ✅ 절대 경로로 쿠키 파일 지정
+    cookie_path = os.path.join(settings.BASE_DIR, 'server', 'cookies.txt')
 
     # yt-dlp 명령어 구성
     cmd = [
         'yt-dlp',
-        '--cookies', './cookies.txt',
+        '--cookies', cookie_path,
         '-f', 'bestaudio',
         '--extract-audio',
         '--audio-format', 'mp3',
