@@ -7,12 +7,12 @@ def youtube_audio(request):
     video_id = request.GET.get('videoId')
     if not video_id:
         return HttpResponse("videoId 파라미터가 필요합니다.", status=400)
+        
+    print("MEDIA_ROOT:", settings.MEDIA_ROOT)
+    print("다운로드 경로:", os.path.join(settings.MEDIA_ROOT, f"{video_id}.%(ext)s"))
 
     filename = f"{video_id}.mp3"
     download_path = os.path.join(settings.MEDIA_ROOT, filename)
-
-    
-    print("✅ 쿠키 경로 확인:", os.path.isfile('./cookies.txt'))
 
     if not os.path.exists(settings.MEDIA_ROOT):
         os.makedirs(settings.MEDIA_ROOT)
@@ -20,13 +20,14 @@ def youtube_audio(request):
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': os.path.join(settings.MEDIA_ROOT, f"{video_id}.%(ext)s"),
-        'ffmpeg_location': '/usr/bin/ffmpeg', # C:/src/ffmpeg/bin | /usr/bin/ffmpeg
-        'cookiefile': './cookies.txt',  # ✅ 로그인 인증을 위한 쿠키 파일 경로 추가
+        'ffmpeg_location': '/usr/bin/ffmpeg',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
+        'cookiefile': '/home/ubuntu/cookies.txt',
+        'verbose': True,  # verbose 모드 활성화
     }
 
     try:
