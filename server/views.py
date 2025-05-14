@@ -18,7 +18,7 @@ def youtube_audio(request):
         'format': 'bestaudio/best',
         'outtmpl': os.path.join(settings.MEDIA_ROOT, f"{video_id}.%(ext)s"),
         'ffmpeg_location': '/usr/bin/ffmpeg', # C:/src/ffmpeg/bin | /usr/bin/ffmpeg
-        'cookies': './cookies.txt',  # ✅ 로그인 인증을 위한 쿠키 파일 경로 추가
+        'cookiefile': './cookies.txt',  # ✅ 로그인 인증을 위한 쿠키 파일 경로 추가
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
