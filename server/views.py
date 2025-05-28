@@ -19,7 +19,7 @@ def youtube_audio(request):
     cookie_path = os.path.join(settings.BASE_DIR, 'server', 'cookies.txt')
     print(cookie_path)
     
-    print(yt_dlp.__version__)
+    print("version", yt_dlp.version.__version__)
 
     # yt-dlp 옵션 설정
     ydl_opts = {
