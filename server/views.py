@@ -2,6 +2,7 @@ import os
 from django.http import HttpResponse, FileResponse
 from django.conf import settings
 from yt_dlp import YoutubeDL
+import yt_dlp
 
 def youtube_audio(request):
     video_id = request.GET.get('videoId')
@@ -17,6 +18,8 @@ def youtube_audio(request):
     # ✅ 절대 경로로 쿠키 파일 지정
     cookie_path = os.path.join(settings.BASE_DIR, 'server', 'cookies.txt')
     print(cookie_path)
+    
+    print(yt_dlp.__version__)
 
     # yt-dlp 옵션 설정
     ydl_opts = {
