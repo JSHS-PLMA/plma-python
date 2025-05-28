@@ -16,6 +16,7 @@ def youtube_audio(request):
 
     # ✅ 절대 경로로 쿠키 파일 지정
     cookie_path = os.path.join(settings.BASE_DIR, 'server', 'cookies.txt')
+    print(cookie_path)
 
     # yt-dlp 옵션 설정
     ydl_opts = {
