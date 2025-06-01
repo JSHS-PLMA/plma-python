@@ -3,6 +3,7 @@ from django.http import HttpResponse, FileResponse
 from django.conf import settings
 from yt_dlp import YoutubeDL
 import yt_dlp
+import boto3
 
 def youtube_audio(request):
     video_id = request.GET.get('videoId')
@@ -33,14 +34,37 @@ def youtube_audio(request):
         'cookiefile': cookie_path,
     }
 
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION,
+    )
+
     try:
         with YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(f'https://www.youtube.com/watch?v={video_id}', download=True)
-            if not os.path.exists(download_path):
-                return HttpResponse("다운로드 파일을 찾을 수 없습니다.", status=500)
+            ydl.download([f'https://www.youtube.com/watch?v={video_id}'])
 
-        # 파일 응답
-        return FileResponse(open(download_path, 'rb'), content_type='audio/mpeg', filename=filename)
+        # ✅ S3에 업로드
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION,
+        )
+
+        # ✅ S3 경로: songs/ 폴더
+        s3_key = f"{settings.AWS_REPO}/{filename}"
+
+        s3.upload_file(download_path, settings.AWS_BUCKET, s3_key)
+
+        # ✅ 업로드 후 로컬 파일 삭제
+        os.remove(download_path)
+
+        # ✅ S3 URL 반환
+        s3_url = f"https://{settings.AWS_BUCKET}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+
+        return HttpResponse(f"S3 업로드 완료: {s3_url}")
 
     except Exception as e:
         return HttpResponse(f"예외 발생: {str(e)}", status=500)
