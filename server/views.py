@@ -11,9 +11,7 @@ def youtube_audio(request):
         return HttpResponse("videoId 파라미터가 필요합니다.", status=400)
 
     filename = f"{video_id}.mp3"
-
-    # ✅ 절대 경로로 쿠키 파일 지정
-    cookie_path = os.path.join(settings.BASE_DIR, 'server', 'cookies.txt')
+    s3_key = f"{settings.AWS_REPO}/{filename}"
 
     # ✅ S3 클라이언트
     s3 = boto3.client(
@@ -23,10 +21,27 @@ def youtube_audio(request):
         region_name=settings.AWS_REGION,
     )
 
+    # ✅ S3 URL
+    s3_url = f"https://{settings.AWS_BUCKET}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+
     try:
-        # ✅ 임시 디렉토리 생성
+        # ✅ S3에 파일이 이미 존재하는지 확인
+        try:
+            s3.head_object(Bucket=settings.AWS_BUCKET, Key=s3_key)
+            # ✅ 이미 존재하면 URL 바로 반환
+            return HttpResponse(f"이미 S3에 존재합니다: {s3_url}")
+        except s3.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                # 존재하지 않음, 아래에서 다운로드!
+                pass
+            else:
+                # 다른 오류는 예외로 처리
+                raise e
+
+        # ✅ 존재하지 않으면 yt-dlp로 다운로드 & S3 업로드
+        cookie_path = os.path.join(settings.BASE_DIR, 'server', 'cookies.txt')
+
         with tempfile.TemporaryDirectory() as temp_dir:
-            # ✅ yt-dlp 옵션 설정
             ydl_opts = {
                 'format': 'bestaudio',
                 'outtmpl': os.path.join(temp_dir, f'{video_id}.%(ext)s'),
@@ -36,29 +51,19 @@ def youtube_audio(request):
                     'preferredquality': '192',
                 }],
                 'cookiefile': cookie_path,
-                # ✅ ffmpeg CPU 사용량 제한
                 'postprocessor_args': ['-threads', '1'],
             }
 
-            # ✅ 다운로드 및 mp3 변환
             with YoutubeDL(ydl_opts) as ydl:
                 ydl.download([f'https://www.youtube.com/watch?v={video_id}'])
 
-            # ✅ mp3 파일 경로
             mp3_path = os.path.join(temp_dir, filename)
-
-            # ✅ S3 경로
-            s3_key = f"{settings.AWS_REPO}/{filename}"
-
-            # ✅ S3에 업로드
             with open(mp3_path, 'rb') as f:
                 s3.upload_fileobj(f, settings.AWS_BUCKET, s3_key)
 
-            # ✅ S3 URL 반환
-            s3_url = f"https://{settings.AWS_BUCKET}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
-
-            # ✅ 임시 디렉토리는 with 블록 끝나면 자동 삭제됨!
-            return HttpResponse(f"S3 업로드 완료: {s3_url}")
+        return HttpResponse(f"S3 업로드 완료: {s3_url}")
 
     except Exception as e:
         return HttpResponse(f"예외 발생: {str(e)}", status=500)
+
+
