@@ -7,6 +7,11 @@ import boto3
 
 def youtube_audio(request):
     video_id = request.GET.get('videoId')
+    key = request.GET.get('key')
+
+    if not(key == settings.KEY):
+        return HttpResponse("Invalid Key", status=403)
+
     if not video_id:
         return HttpResponse("videoId 파라미터가 필요합니다.", status=400)
 
