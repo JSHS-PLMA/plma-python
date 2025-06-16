@@ -6,6 +6,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from yt_dlp import YoutubeDL
+from yt_dlp.utils import download_range_func
 import boto3
 
 @csrf_exempt
@@ -71,6 +72,8 @@ def youtube_audio(request):
                 }],
                 'cookiefile': cookie_path,
                 'postprocessor_args': ['-threads', '1'],
+                'download_ranges': download_range_func(None, [(start, end)]),
+                'force_keyframes_at_cuts': True,
             }
 
             with YoutubeDL(ydl_opts) as ydl:
